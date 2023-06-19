@@ -62,19 +62,20 @@ func mimicWrapper(requestChan chan RequestEvent) http.Handler {
 func main() {
 	requests := make(chan RequestEvent, 100)
 	atomic.AddInt32(&acceptingRequests, 0)
+
 	go processor(requests)
+	go handleCtrlC()
 
 	mux := http.NewServeMux()
 	handler := mimicWrapper(requests)
 	mux.Handle("/", handler)
 
-	handleCtrlC(requests)
 	err := http.ListenAndServe(":3333", mux)
-	println(err.Error())
+	log.Default().Println(err)
 }
 
 // this function handles the sig int and sig term signals
-func handleCtrlC(requestsChan chan RequestEvent) {
+func handleCtrlC() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT)
 
